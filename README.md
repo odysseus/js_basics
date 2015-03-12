@@ -578,4 +578,63 @@ So we invoke a function that creates an array for remembering values and stores 
 
 # Inheritance
 
+Being a prototypal language objects inherit behavior directly from other objects and not from a class. This section looks at design patterns you can use with JS.
+
+## PseudoClassical
+`prototype` is a property of all objects that acts as a dropbox for adding behavior to objects of that class.
+
+To explore this first we define a class:
+
+```javascript
+var Animal = function(name, says) {
+  this.name = name;
+  this.says = says;
+}
+```
+
+then we can define some behavior on that class:
+
+```javascript
+Animal.prototype.speak = function() {
+  return this.says;
+}
+```
+
+To make an instance with this approach use the `new` command:
+
+```javascript
+var cow = new Animal('Cow', 'Moo');
+var cow_says = cow.speak() // 'Moo'
+```
+
+We can define more objects and set these up to inherit from `Animal`
+
+```javascript
+var Cat = function(name) {
+  this.name = name;
+  this.says = "meow";
+};
+
+// Now replace the prototype with a new instance of Animal
+Cat.prototype = new Animal();
+
+// We gain all the methods Animal had along with the ability to add more
+Cat.prototype.lash_out = function() {
+  return "Raaaaawr!";
+};
+
+// Additionally methods you add to Animal will be available
+// on Cat because the prototypes are linked
+Animal.prototype.chew = function() {
+  return "NomNom";
+};
+
+var cleo = Cat('Cleo');
+cleo.chew() // 'NomNom'
+```
+
+So that's the basic pattern and you may see people using it so it's worth being familiar. However the caveats are manifold and despite a passing similarity to classical OO programming it's still not that. Better to follow idiomatic JS patterns and prototypal OO rather than couching it in this paradigm.
+
+## Prototypal
+
 
