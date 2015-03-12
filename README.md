@@ -121,8 +121,8 @@ JS is a prototypal language, you do not define classes and behaviors for that cl
 var empty_obj = {}
 
 var person = {
-  "first-name": "Grace",
-  "last-name": "Hopper"
+  "fistName": "Grace",
+  "lastName": "Hopper"
 };
 ```
 
@@ -130,17 +130,17 @@ Property names can be any string. Quotes around a property name are optional sin
 
 ```javascript
 var person = {
-  first-name: "Grace",
-  last-name: "Hopper"
+  firstName: "Grace",
+  lastName: "Hopper"
 }
 ```
 
 Objects can include other objects:
 
 ```javascript
-var flt370 = {
+var flight = {
   airline: "PanAm",
-  flight-number: 270,
+  flightNumber: 270,
   depart: {
     airport: "DIA",
     time: "2014-03-16 15:30"
@@ -155,7 +155,7 @@ var flt370 = {
 Variable retrieval can be done either with a dictionary-like syntax or using dots
 
 ```javascript
-person["first-name"]
+person["firstName"]
 ```
 
 If a value doesn't exist you get `undefined`. Assigning to an object without that attribute simply adds that attribute.
@@ -189,7 +189,7 @@ __for in__
 The `for in` loop can be used to iterate over the properties of an object
 
 ```javascript
-for (prop in flight37) {
+for (prop in flight) {
   document.writeln(typeof prop)
 }
 ```
@@ -216,29 +216,47 @@ JS uses global variables more than most languages but still has the same namespa
 ```javascript
 var MYAPP = {}
 
-MYAPP.settings = {}
+MYAPP.formatting = {}
 ```
 
-And so on...
+Or something in that vein...
 
 ## Functions
 
+There are two common ways to define functions:
+
 ```javascript
-function name (args) {
+// First
+var name = function(args) {
   body;
 };
+
+// Second
+function name (args) {
+  body;
+}
 ```
 
-Functions have four parts. First the declaration `function`, next an optional `name`, third, the list of `args` and finally the function `body` itself.
+There are a few differences here. The first form is an anonymous function that has been assigned to a named variable. The second form is a named function. Anonmyous functions are defined at runtime, whereas named functions are defined at parse time. Named functions gain some functionality, such as `toString()` and a few other methods... The nuances of the two forms are beyond the scope of this quick overview, but in a nutshell use named functions when you want to reuse it in other parts of the program, and use anonymous functions for object methods and one-shot function calls. More info [here](http://www.permadi.com/tutorial/jsFunc/index.html).
 
-Functions are first class, they can be properties of an object and they can be passed as arguments. They can be nested inside another function. When nested the function inherits the namespace of the function above it. Nested functions act as a closure.
+Functions have four parts. First the declaration `function`, next an optional `name`, third, the list of `args` and finally the function `body` itself. Why JS includes superfluous spaces where no other language has them is another issue for another time.
+
+Functions are first class, they can be properties of an object and they can be passed as arguments. They can be nested inside another function. When nested the function inherits the namespace of the function above it (with one notable exception listed below). Nested functions also act as a closure.
+
+```javascript
+function counter() {
+  var count = 0;
+  return function() {
+  };
+}
+```
 
 ### Invocation and `this`
 
 Every function receives two additional parameters in addition to what it was called with, `this` and `arguments`. There are four patterns that set the value of `this`
 
-- Method Invocation: Functions stored as properties of an object are 'methods', when a method is invoked `this` is set to the invoking object.
-- Function Invocation: Non-method function invocations bind `this` to the global object. This applies to *all* non-method functions and leads to some stupid behavior when the function call is contained inside a method because that function will bind to the global object and not the containing object. There is a common pattern to work around this:
+- **Method Invocation**: Functions stored as properties of an object are 'methods', when a method is invoked `this` is set to the invoking object.
+- **Function Invocation**: Non-method function invocations bind `this` to the global object. _This applies to **all** non-method functions_ and leads to some stupid behavior when the function call is contained inside a method because that function will bind to the global object and not the containing object. There is a common pattern to work around this:
 
 ```javascript
 myObject.double = function() {
@@ -256,23 +274,85 @@ myObject.double();
 document.writeln(myObject.value);
 ```
 
-- Constructor Invocation: JS has a constructor-like syntax despite not really being a feature of a prototypal language which also interacts weirdly with the value of `this` and the `return` statement.
+- **Constructor Invocation**: JS has a constructor-like syntax which is honestly just best to avoid and use JS as a prototypal language as it was intended. Nonetheless, when this pattern is used `this` is set to the value of the newly created object.
+- **Apply Invocation**: Functions are also objects and have methods, one of which is `apply`. Apply allows us to pass the value of `this` and an array of args and to run the function that way. Examples are really needed to explain this:
 
 ```javascript
-// Create a constructor for an object with a single property
-var Person = function(string) {
-  this.name = string;
+function add(x, y) {
+  return x + y;
+}
+
+// We will use these args to call add
+var args = [3, 4];
+// The first argument is the value of `this`, because this it not
+// a method we supply null
+var sum = add.apply(null, args);
+// 7
+
+// Now using an object for the value of `this`
+var nameObj = {
+  name: 'Dave'
 };
 
-// Give all instances of Person a method called get_name
-Person.prototype.name = function() {
-  return this.name;
+var name = Person.prototype.get_name.apply(nameObj);
+// Dave
+
+// Note that we don't pass other args because it has none, and we can pass
+// nameObj even though it has no relation to Person. In other words we can
+// force using an arbitrary value of `this` this way
+```
+
+### Variadic Functions
+
+All functions are automatically supplied with the `arguments` object listing all the arguments passed during the function call. This can be used to write variadic functions.
+
+```javascript
+function sum() {
+  var sum = 0;
+  for (i=0; i<arguments.length; i++) {
+    sum += arguments[i];
+  }
+  return sum;
+}
+```
+
+Unfortunately `arguments` is not an actual array it's just an object that's _like_ an array. It has a `length` but no other array methods. You know, JavaScript.
+
+### Return
+
+`return` specifies the return value of a function. Like Ruby all functions return a value, unlike Ruby that return is not implicit. When it is not defined it returns `undefined`, pretty logical huh!?
+
+One exception, if the function is invoked using `new` prefix it will always return the object created, even if the return value of the function was not an object.
+
+
+### Exceptions
+
+Exceptions are thrown using `throw` and returning an object that contains information about the error.
+
+```javascript
+function add(a,b) {
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw {
+      name: 'TypeError',
+      message: 'Both arguments must be a number'
+    };
+  };
+  return a + b;
+}
+```
+
+`name` and `message` are standard errors, but it can be given more.
+
+Catching exceptions is done with `try...catch`:
+
+```javascript
+var failfn = function() {
+  try {
+    add("seven", "eight");
+  } catch (e) {
+    document.writeln(e.name + ": " + e.message);
+  }
 };
-
-// Make an instance of person
-var jane = new Person("Jane");
-
-document.writeln(jane.get_name()); // 'Jane'
 ```
 
 
