@@ -355,4 +355,227 @@ var failfn = function() {
 };
 ```
 
+Unlike the same pattern in other languages this cannot be used to catch specific exceptions. If you need special handling for the type of exception you will need to do it within the `catch` block by inspecting the object.
+
+### Augmenting Types
+
+JS also allows "type augmentation" or monkey patching. Every type has a prototype, by adding a method directly to this prototype it becomes available to all objects of that type. By adding to a base type like `Object` or `Function` it becomes available to all objects or functions:
+
+```javascript
+Object.prototype.sayPotato = function() {
+  document.writeln("Potato!");
+};
+```
+
+Note that all objects previously defined will still be affected by this. Because *everything* inherits from `Object` this can have rather insane side-effects:
+
+```javascript
+function add(x, y) {
+  return x + y
+}
+
+add.sayPotato();
+// Potato!
+```
+
+But it can be used to add features to the language, the following example adds a `method` method to the object base class so you don't have to call `prototype` each time, then uses that to define a method on `Number` that returns an integer value.
+
+```javascript
+Object.prototype.method = function(name, func) {
+  this.prototype[name] = func;
+  return this;
+};
+
+Number.method('integer', function() {
+  return Math[this < 0 ? 'ceil' : 'floor'](this);
+});
+```
+
+Cool pattern, although it adds some external complexity and doesn't really save *that* much time, but it shows the possibilities.
+
+Actually, because this feature is available to everyone it's good practice to make sure that the method doesn't already exist before redefining it. That said, as defensive mechanisms go it kinda misses the point. If you're trying to add a method it's for specific functionality, simply not adding the method by using a conditional will prevent breaking other libraries, but it might break yours.
+
+### Scope
+
+JavaScript does **NOT** have block scope. For this reason it is recommended that you declare all variables at the top of the function. JavaScript does have function scoping. Basically, an inner function can read a variable from an enclosing scope and modify it *internally*, however, if that function ends and the variable continues to exist beneath it that variable will revert to the value from its scope. An example:
+
+```javascript
+var outer = function() {
+  var a = 1;
+
+  var inner = function() {
+    var b = 2;
+    // a exists and is equal to 1
+    a += b;
+    // a exists and is now equal to 3
+  };
+
+  // a exists and is back to 1 now because the function assigned
+  // to inner has not been called in this scope
+  // b does not exist in this outer scope
+
+  inner();
+  // After the function call a is equal to 3
+  // b still does not exist in this scope as it was declared in inner
+};
+```
+
+### Closures
+
+As we've already mentioned, though, nested functions *do* gain access to their outer contexts and can be used as closures:
+
+```javascript
+var nextFibo = function() {
+  var a = 0;
+  var b = 1;
+
+  return function() {
+    b = a + b;
+    a = b - a;
+    return b;
+  };
+};
+```
+
+A more interesting use of closures is to return an object literal with an attribute that is stored in the enclosing scope rather than as a property on the object itself. An example of that is given under "Modules".
+
+```javascript
+var counter = (function() {
+  var value = 0;
+
+  return {
+    increment: function(inc) {
+      value += typeof inc === 'number' ? inc : 1;
+    },
+    getValue: function() {
+      return value;
+    }
+  };
+}());
+```
+
+### Callbacks
+
+Many functions can be called asynchronously and take a callback function to call when the main function completes:
+
+```javascript
+send_request(request, function(response) {
+  display(response);
+});
+```
+
+### Modules
+
+Functions and closures can be used to hide implementation details in a module-like fashion. Suppose you had configuration variables that you wanted to store in an object for a function that would be invoked often. Storing it in the function itself involves creating that object every time the function is run and destroying it at the end which adds an unnecessary runtime cost since the object is never modified. On the other hand, putting it in a global variable clutters the global namespace and is just bad form.
+
+By calling the function from a closure and storing the config in the outer function, you ensure that the object is only created the first time it's called but retains the same behavior as a normal function call from the user's perspective.
+
+```javascript
+Object.prototype.newFn = function() {
+  var config = {
+    place: "config",
+    info: "here"
+  };
+
+  return function() {
+    // You can use all the variables from the closure in this function, by
+    // invoking it at the end the behavior from the user's standpoint is the
+    // same as if the closure had not been there.
+  }();
+```
+
+Similarly, the 'hidden but accessible' nature of the outer variables makes it a good choice for implementing things like ID's and sequences where the variable storing the current value should not be changed manually and can not be compromised.
+
+```javascript
+function makeSeq(start) {
+  var current = start;
+  return {
+    value: function() {
+      return current;
+    },
+    next: function() {
+      current++;
+    }
+  };
+}
+```
+
+In the return object the value of current is a variable within the closure and not a property of the object so it cannot be accessed by any means other than the defined set of methods on the object.
+
+### Cascade
+
+On methods that perform an action but do not return a value the return value is typically not used and returns `undefined`. By returning `this` instead we enable a method chaining technique known as "cascade"
+
+```javascript
+getElement('myBoxDiv')
+    .move(350, 150)
+    .width(100)
+    .height(100)
+    .color('red')
+    .border('10px outset')
+    .padding('4px')
+    .appendText("Please stand by")
+    .on('mousedown', function (m) {
+        this.startDrag(m, this.getNinth(m));
+    }).
+    .on('mousemove', 'drag')
+    .on('mouseup', 'stopDrag')
+    .later(2000, function (  ) {
+        this
+            .color('yellow')
+            .setHTML("What hath God wraught?")
+            .slide(400, 40, 200, 200);
+    })
+    .tip("This box is resizeable");
+```
+
+What's happening here is that each method changes the DOM element in some way, and then returns the element at the end, because of that we can immediately call another subroutine-like method on it, and do many of them in succession. The resulting code is cleaner and clearer.
+
+### Currying
+
+Currying/partial evaluation is not built in by default but we can add it:
+
+```javascript
+Function.prototype.curry = function() {
+  var args = arguments, self = this;
+  return function() {
+    return self.apply(null, args.concat(arguments));
+  };
+};
+```
+
+This holds the original value of `this` and the original value of `arguments` in a closure using `self` and `args` respectively. That allows us to give arguments to a function and return one that is partially evaluated.
+
+```javascript
+function add(x, y) {
+  return x + y;
+}
+
+var inc = add.curry(1);
+document.writeln(inc(6));
+```
+
+### Memoization
+
+Memoization using a recursive fibonacci function:
+
+```javascript
+var fibo = (function() {
+  var memo = [0, 1];
+  var fib = function(n) {
+    var result = memo[n];
+    if (typeof result !== 'number') {
+      result = fib(n-1) + fib(n-2);
+      memo[n] = result;
+    }
+    return result;
+  };
+  return fib;
+}());
+```
+
+So we invoke a function that creates an array for remembering values and stores a function that calculates them, then returns that function. Calls to that function will store computed values in the closure and search for them there first, if it does not find them it will compute the value itself using the recursive solution.
+
+# Inheritance
+
 
