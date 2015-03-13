@@ -1,10 +1,10 @@
-//if (typeof Object.create !== 'function') {
-  //Object.create = function (o) {
-    //var F = function () {};
-    //F.prototype = o;
-    //return new F();
-  //};
-//}
+if (typeof Object.create !== 'function') {
+  Object.create = function (o) {
+    var F = function () {};
+    F.prototype = o;
+    return new F();
+  };
+}
 
 // Improving printing on simple scripts
 function println(str) {
@@ -128,6 +128,7 @@ var fibo = (function() {
 
 /// Objects ///
 
+/// Classical ///
 var Animal = function(name, says) {
   this.name = name;
   this.says = says;
@@ -148,9 +149,44 @@ Animal.prototype.chew = function() {
   return "Chewing";
 };
 
+/// Prototypal ///
+
+var person = {
+  name: 'Doug',
+  hobbies: ["skiing"],
+  greet: function() {
+    return "Hi, I'm " + (this.name || "a person") + "!";
+  },
+  list_hobby: function() {
+    return "I enjoy " + (this.hobbies[0] || "nothing") + "!";
+  }
+};
+
+/// Functional ///
+var secret_animal = function(spec) {
+  var that = {};
+
+  that.name = function() {
+    return spec.name;
+  };
+
+  that.speak = function() {
+    return spec.says;
+  };
+
+  return that;
+};
+
 
 // Print statements
 println("Hello, world!");
 
-var cleo = new Cat('Cleo')
-println(cleo.chew());
+var cow = new Animal("cow", "moo");
+var secret_cow = secret_animal(cow);
+println(cow.name);
+println(secret_cow.name());
+println(cow.speak());
+println(secret_cow.speak());
+secret_cow.says = "Woof";
+println(cow.speak());
+println(secret_cow.speak());
