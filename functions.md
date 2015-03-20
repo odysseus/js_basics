@@ -16,9 +16,9 @@ function name (args) {
 
 There are a few differences here. The first form is an anonymous function that has been assigned to a named variable. The second form is a named function. Anonmyous functions are defined at runtime, whereas named functions are defined at parse time. Named functions gain some functionality, such as `toString()` and a few other methods... The nuances of the two forms are beyond the scope of this quick overview, but in a nutshell use named functions when you want to reuse it in other parts of the program, and use anonymous functions for object methods and one-shot function calls. More info [here](http://www.permadi.com/tutorial/jsFunc/index.html).
 
-Functions have four parts. First the declaration `function`, next an optional `name`, third, the list of `args` and finally the function `body` itself. Why JS includes superfluous spaces where no other language has them is another issue for another time.
+Functions have four parts. First the declaration `function`, next an optional `name`, third, the list of `args` and finally the function `body` itself.
 
-Functions are first class, they can be properties of an object and they can be passed as arguments. They can be nested inside another function. When nested the function inherits the namespace of the function above it (with one notable exception listed below). Nested functions also act as a closure.
+Functions are first class, they can be properties of an object and they can be passed as arguments. They can be nested inside another function. When nested, the function inherits the namespace of the function above it (with one notable exception listed below). Nested functions also act as a closure.
 
 ```javascript
 function counter() {

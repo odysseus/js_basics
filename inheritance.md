@@ -160,7 +160,7 @@ function loggable(obj) {
   obj.logfile = "somelogfile.txt";
   obj.logfn = function(fname, args) {
     // log stuff
-    obj.fname.apply(args);
+    obj[fname].apply(obj, args);
   }
   return obj;
 }
